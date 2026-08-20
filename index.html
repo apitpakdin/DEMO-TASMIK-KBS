@@ -1227,7 +1227,7 @@ const BLF=['Januari','Februari','Mac','April','Mei','Jun','Julai','Ogos','Septem
 const DARJAH=['Darjah 1','Darjah 2','Darjah 3','Darjah 4','Darjah 5','Darjah 6'];
 
 // URL Backend — dikemaskini secara automatik
-const DEFAULT_API_URL = 'TUKAR_DENGAN_URL_DEPLOYMENT_DEMO_ANDA'; // ⚠️ DEMO: gantikan dengan URL /exec dari Code-DEMO.gs
+const DEFAULT_API_URL = 'https://script.google.com/macros/s/AKfycbw2desaCl8xPFghehZCVwFGN-nvhR6Fi2tn4rDrOWtWRhohfzg9kl2Qz5TOufKWsNO1/exec';
 const APP_VERSION = '2.2';
 let API_URL = DEFAULT_API_URL;
 let IS_OFFLINE = false;
@@ -1243,27 +1243,27 @@ let pendingSync=[]; // offline queue
 ═══════════════════════════════════════ */
 function loadConfig(){
   // Semak versi — kalau versi berbeza, paksa guna URL baru
-  const savedVersion = localStorage.getItem('skdk_version');
+  const savedVersion = localStorage.getItem('demo_skdk_version');
   if (savedVersion !== APP_VERSION) {
     // Versi baru — paksa kemaskini URL dan clear cache lama
-    localStorage.setItem('skdk_version', APP_VERSION);
-    localStorage.removeItem('skdk_offline');
+    localStorage.setItem('demo_skdk_version', APP_VERSION);
+    localStorage.removeItem('demo_skdk_offline');
     console.log('Versi baru '+APP_VERSION+' — URL dikemaskini');
   }
 
   // Guna URL yang pernah disimpan. Jika belum ada, baru guna URL default.
   // Jangan paksa DEFAULT_API_URL setiap kali app dibuka kerana URL deployment
   // Apps Script boleh berubah selepas cikgu deploy semula.
-  const savedUrl = localStorage.getItem('skdk_api_url');
+  const savedUrl = localStorage.getItem('demo_skdk_api_url');
   API_URL = savedUrl || DEFAULT_API_URL;
-  if(!savedUrl) localStorage.setItem('skdk_api_url', DEFAULT_API_URL);
+  if(!savedUrl) localStorage.setItem('demo_skdk_api_url', DEFAULT_API_URL);
   document.getElementById('cfgUrl').value = API_URL;
 
-  const offline=localStorage.getItem('skdk_offline');
+  const offline=localStorage.getItem('demo_skdk_offline');
   if(offline==='1') IS_OFFLINE=true;
 
   // Load local DB
-  const ldb=localStorage.getItem('skdk_db');
+  const ldb=localStorage.getItem('demo_skdk_db');
   if(ldb) try{DB=JSON.parse(ldb);}catch(e){}
   if(!DB.guru) DB.guru=[];
   if(!DB.murid) DB.murid=[];
@@ -1272,7 +1272,7 @@ function loadConfig(){
   if(!DB.kumpulan) DB.kumpulan=[];
   if(!DB.bestari) DB.bestari={};
 
-  const pending=localStorage.getItem('skdk_pending');
+  const pending=localStorage.getItem('demo_skdk_pending');
   if(pending) try{pendingSync=JSON.parse(pending);}catch(e){}
 }
 
@@ -1280,9 +1280,9 @@ function sambungBackend(){
   const url=document.getElementById('cfgUrl').value.trim();
   if(!url||!url.startsWith('https://')){showT('Sila masukkan URL yang sah (https://...)','err');return;}
   API_URL=url;
-  localStorage.setItem('skdk_api_url',url);
+  localStorage.setItem('demo_skdk_api_url',url);
   IS_OFFLINE=false;
-  localStorage.removeItem('skdk_offline');
+  localStorage.removeItem('demo_skdk_offline');
   document.getElementById('configScreen').classList.add('hidden');
   updateSyncStatus(true);
   showT('✅ URL disimpan! Mencuba sambungan...','ok');
@@ -1340,7 +1340,7 @@ async function testSambungan(){
 
 function gunaOffline(){
   IS_OFFLINE=true;
-  localStorage.setItem('skdk_offline','1');
+  localStorage.setItem('demo_skdk_offline','1');
   // Seed default admin for offline
   if(!DB.guru.length){
     DB.guru=[{id:'G0001',nama:'Admin SK Datin Khadijah',email:ADMIN_EMAIL,peranan:'admin',darjah:'',kelas:'',status:'Aktif'}];
@@ -1562,9 +1562,9 @@ function queueSync(action,body){
   const key=JSON.stringify({action,body});
   const sudahAda=pendingSync.some(item=>JSON.stringify({action:item.action,body:item.body})===key);
   if(!sudahAda) pendingSync.push({action,body,ts:Date.now()});
-  localStorage.setItem('skdk_pending',JSON.stringify(pendingSync));
+  localStorage.setItem('demo_skdk_pending',JSON.stringify(pendingSync));
 }
-function saveLocal(){localStorage.setItem('skdk_db',JSON.stringify(DB));}
+function saveLocal(){localStorage.setItem('demo_skdk_db',JSON.stringify(DB));}
 
 // ── Buang duplikat murid (sama nama + darjah + kelas) ──
 function dedupMurid(){
@@ -1629,7 +1629,7 @@ async function syncData(){
         }
       }catch(e){}
     }
-    localStorage.setItem('skdk_pending',JSON.stringify(pendingSync));
+    localStorage.setItem('demo_skdk_pending',JSON.stringify(pendingSync));
 
     // Langkah 2: Ambil data terkini dari server
     const fresh=await api('getAll',{userId:CU?.id,peranan:CU?.peranan});
@@ -1651,7 +1651,7 @@ async function syncData(){
     }
 
     IS_OFFLINE=false;
-    localStorage.removeItem('skdk_offline');
+    localStorage.removeItem('demo_skdk_offline');
     document.getElementById('syncBanner').classList.remove('show');
     updateSyncStatus(true);
     const bil=DB.murid.filter(m=>m.status==='Aktif').length;
@@ -2189,7 +2189,7 @@ function rkPilihMurid(id){
 
   // Simpan sebagai murid terakhir
   lastMuridId=id;
-  localStorage.setItem('skdk_last_murid',id);
+  localStorage.setItem('demo_skdk_last_murid',id);
 
   // Trigger rkOnMurid untuk isi semua field form
   rkOnMurid();
@@ -2272,7 +2272,7 @@ function rkQ(k,el){rkQVal=k;document.querySelectorAll('.qb').forEach(b=>b.classL
 function rkTglChk(id){const el=document.getElementById(id);if(el.classList.contains('on')){el.classList.remove('on');el.textContent='';}else{el.classList.add('on');el.textContent='✓';}}
 
 // Ingat murid terakhir direkod
-let lastMuridId = localStorage.getItem('skdk_last_murid')||'';
+let lastMuridId = localStorage.getItem('demo_skdk_last_murid')||'';
 
 async function rkSimpan(){
   const muridId=rkMuridId||document.getElementById('rkM')?.value||'';
@@ -2314,7 +2314,7 @@ async function rkSimpan(){
   // Pastikan tidak dalam mod offline sebelum hantar
   if(IS_OFFLINE){
     IS_OFFLINE=false;
-    localStorage.removeItem('skdk_offline');
+    localStorage.removeItem('demo_skdk_offline');
     updateSyncStatus(true);
   }
 
@@ -2351,7 +2351,7 @@ async function rkSimpan(){
   const jb=document.getElementById('rkJB');if(jb)jb.style.display='none';
   const wb=document.getElementById('rkWB');if(wb)wb.style.display='none';
   lastMuridId=muridId;
-  localStorage.setItem('skdk_last_murid',muridId);
+  localStorage.setItem('demo_skdk_last_murid',muridId);
 
   showT('✅ Rekod disimpan!'+(rekod.naikPeringkat?' 🎉 Naik peringkat!':''),'ok',3000);
   renderRekodToday();
@@ -3385,7 +3385,7 @@ function doBackupJSON(){
 ═══════════════════════════════════════ */
 function simpanTetapan(){
   const url=document.getElementById('setUrl').value.trim();
-  if(url){API_URL=url;localStorage.setItem('skdk_api_url',url);IS_OFFLINE=false;localStorage.removeItem('skdk_offline');}
+  if(url){API_URL=url;localStorage.setItem('demo_skdk_api_url',url);IS_OFFLINE=false;localStorage.removeItem('demo_skdk_offline');}
   alertDays=parseInt(document.getElementById('setAD').value)||7;
   showT('✅ Tetapan disimpan!','ok');
   updateStatsTetapan();
@@ -3975,7 +3975,7 @@ async function loginGuru(guruId){
 
   // Simpan sesi
   simpanSesi(CU);
-  localStorage.setItem('skdk_last_email', guru.id);
+  localStorage.setItem('demo_skdk_last_email', guru.id);
 
   // Pastikan guru ada dalam DB tempatan
   if(!DB.guru.find(g=>g.id===guru.id)){
@@ -4033,20 +4033,20 @@ function tanyaKelas(guru){
    Guru buka apps terus masuk tanpa login
 ═══════════════════════════════════════ */
 function simpanSesi(user){
-  localStorage.setItem('skdk_session', JSON.stringify({
+  localStorage.setItem('demo_skdk_session', JSON.stringify({
     user, masa: Date.now()
   }));
 }
 
 function muatSesi(){
   try{
-    const raw = localStorage.getItem('skdk_session');
+    const raw = localStorage.getItem('demo_skdk_session');
     if(!raw) return null;
     const sesi = JSON.parse(raw);
     // Sesi kekal 365 hari (guru tak perlu login semula)
     const hadSesi = 365 * 24 * 60 * 60 * 1000;
     if(Date.now() - sesi.masa > hadSesi){
-      localStorage.removeItem('skdk_session');
+      localStorage.removeItem('demo_skdk_session');
       return null;
     }
     return sesi.user;
@@ -4054,7 +4054,7 @@ function muatSesi(){
 }
 
 function padamSesi(){
-  localStorage.removeItem('skdk_session');
+  localStorage.removeItem('demo_skdk_session');
 }
 
 // Override doLogin untuk simpan sesi
@@ -4067,7 +4067,7 @@ async function doLogin(){
   if(!r.ok){showT(r.msg||'Login gagal','err');return;}
   CU = r.user;
   simpanSesi(CU); // ← simpan sesi supaya tak perlu login lagi
-  localStorage.setItem('skdk_last_email', u); // ← ingat email untuk kemudahan
+  localStorage.setItem('demo_skdk_last_email', u); // ← ingat email untuk kemudahan
   await masukApps();
 }
 
